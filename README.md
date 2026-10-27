@@ -1,12 +1,6 @@
 # multi-erp-etl
 
-Normalizes invoice/order data from **heterogeneous ERP exports** (JSON,
-XML — different shapes, different field names) into one canonical schema,
-so BI and reporting code never has to branch on "which ERP did this come
-from".
-
-Generalized from integration work across TOTVS-, SAP- and Omie-style
-exports feeding a data warehouse.
+Converts invoice and order data from different ERP exports (JSON or XML, each with its own shape and field names) into one canonical schema, so the reporting code downstream never has to check which ERP a record came from.
 
 ## How it works
 
@@ -14,9 +8,9 @@ exports feeding a data warehouse.
 raw ERP record (dict / XML) --> Adapter.parse() --> CanonicalInvoice --> validate()
 ```
 
-- `schema.py` — the target `CanonicalInvoice` dataclass
-- `adapters/` — one adapter per source shape (`JsonErpAdapter`, `XmlErpAdapter`); add your own by implementing `parse()`
-- `pipeline.py` — runs an adapter over a batch, **isolates bad rows** instead of failing the whole batch, and routes them to `on_error`
+- `schema.py` holds the target `CanonicalInvoice` dataclass.
+- `adapters/` has one adapter per source format (`JsonErpAdapter`, `XmlErpAdapter`). A new source only needs a `parse()`.
+- `pipeline.py` runs an adapter over a batch. A bad record does not stop the batch: it is passed to `on_error` and the rest goes on.
 
 ## Quick start
 
@@ -30,9 +24,7 @@ invoices = run_pipeline(adapter, raw_json_records, on_error=lambda exc, raw: log
 
 ## Adding a new ERP source
 
-Implement the `ErpAdapter` protocol (`adapters/base.py`) — just a `name`
-and a `parse()` generator that yields `CanonicalInvoice` instances. No
-changes needed anywhere else in the pipeline.
+Implement the `ErpAdapter` protocol in `adapters/base.py`: a `name` and a `parse()` generator that yields `CanonicalInvoice` objects. Nothing else in the pipeline changes.
 
 ## Development
 
@@ -44,4 +36,4 @@ ruff check .
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
